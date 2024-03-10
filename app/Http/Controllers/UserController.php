@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Role;
+use App\Service\UserService;
+use Exception;
 use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
@@ -22,7 +24,8 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|same:confirm-password',
+            'password' => 'required|same:password_confirmation',
+            'password_confirmation' => 'required',
             'roles' => 'required'
         ]);
 
@@ -30,9 +33,10 @@ class UserController extends Controller
         $input['password'] = Hash::make($input['password']);
 
         $user = User::create($input);
-        $user->assignRole($request->input('roles'));
+        $user->assignRole($input['roles']);
 
         return response()->json(['message' => 'User created successfully', 'user' => $user], 201);
+        // return UserService::create($request);
     }
 
     public function show($id)
@@ -53,8 +57,9 @@ class UserController extends Controller
 
         $this->validate($request, [
             'name' => 'required',
-            'email' => 'required|email|unique:users,email,'.$id,
-            'password' => 'same:confirm-password',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|same:password_confirmation',
+            'password_confirmation' => 'required',
             'roles' => 'required'
         ]);
 
@@ -74,12 +79,17 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        $user = User::find($id);
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+        try{
+            $user = User::find($id);
+            if (!$user) {
+                return response()->json(['message' => 'User not found'], 404);
+            }
+
+            $user->delete();
+            return response()->json(['message' => 'User deleted successfully'], 200);
+        }catch(\Throwable $e){
+            return response()->json(['message' => $e->getMessage()], 500);
         }
 
-        $user->delete();
-        return response()->json(['message' => 'User deleted successfully'], 200);
     }
 }

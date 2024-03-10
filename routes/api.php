@@ -25,7 +25,15 @@ Route::post('register',[RegisteredUserController::class,'store']);
 Route::post('login',[AuthenticatedSessionController::class,'store']);
 Route::post('logout',[AuthenticatedSessionController::class,'destroy'])
   ->middleware('auth:api');
+  Route::get('users',[UserController::class,'index'])
+  ->middleware('auth:api', 'role:Admin');
+  Route::get('users/{id}',[UserController::class,'show'])
+  ->middleware('auth:api', 'role:Admin');
+  Route::post('users',[UserController::class,'store'])
+  ->middleware('auth:api', 'role:Admin');
+  Route::put('users/{id}',[UserController::class,'update'])
+  ->middleware('auth:api', 'role:Admin');
+  Route::delete('users/{id}',[UserController::class,'destroy'])
+  ->middleware('auth:api', 'role:Admin');
 
-Route::group(['middleware' => ['role:Admin']], function () {
-    Route::resource('users', UserController::class);
-});
+    // Route::resource('users', UserController::class)->middleware('role:Admin');
