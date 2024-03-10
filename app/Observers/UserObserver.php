@@ -18,12 +18,16 @@ class UserObserver
      */
     public function created(User $user)
     {
-        $user->notify(new WelcomeEmailNotification($user));
+        try {
+            $user->notify(new WelcomeEmailNotification($user));
 
-        $userAdmin = User::role('Admin')->first();
+            $userAdmin = User::role('Admin')->first();
 
-        if ($userAdmin) {
-            $userAdmin->notify(new AdminNotification($user));
+            if ($userAdmin) {
+                $userAdmin->notify(new AdminNotification($user));
+            }
+        } catch (\Throwable $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
