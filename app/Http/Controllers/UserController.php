@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Service\UserService;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role as ModelsRole;
 
 class UserController extends Controller
 {
@@ -26,17 +27,19 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|same:password_confirmation',
             'password_confirmation' => 'required',
-            'roles' => 'required'
         ]);
+        DB::transaction(function() use($request) {
+            $role = ModelsRole::findByName("User");
 
         $input = $request->all();
         $input['password'] = Hash::make($input['password']);
 
         $user = User::create($input);
-        $user->assignRole($input['roles']);
+        $user->assignRole($role);
 
         return response()->json(['message' => 'User created successfully', 'user' => $user], 201);
         // return UserService::create($request);
+        });
     }
 
     public function show($id)
@@ -63,6 +66,7 @@ class UserController extends Controller
             'roles' => 'required'
         ]);
 
+        
         $input = $request->all();
         if(!empty($input['password'])){
             $input['password'] = Hash::make($input['password']);

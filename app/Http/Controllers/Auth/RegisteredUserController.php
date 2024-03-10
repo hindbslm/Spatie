@@ -7,8 +7,10 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Spatie\Permission\Models\Role;
 
 class RegisteredUserController extends Controller
 {
@@ -25,15 +27,28 @@ class RegisteredUserController extends Controller
         $registerUserData = $request->validate([
             'name'=>'required|string',
             'email'=>'required|string|email|unique:users',
-            'password'=>'required|min:8'
+            'password'=>['required,min:8','regex:/[a-z]/',
+                'regex:/[A-Z]/',
+                'regex:/[a-z]/',
+                'regex:/[0-9]/',
+                'regex:/[@$!%*#?&]/'],
         ]);
-        $user = User::create([
-            'name' => $registerUserData['name'],
-            'email' => $registerUserData['email'],
-            'password' => Hash::make($registerUserData['password']),
-        ]);
-        return response()->json([
-            'message' => 'User Created ',
-        ]);
+        DB::transaction(function() use($registerUserData) {
+            $role = Role::findByName("User");
+
+            $user = User::create([
+                'name' => $registerUserData['name'],
+                'email' => $registerUserData['email'],
+                'password' => Hash::make($registerUserData['password']),
+
+            ]);
+
+            $user->assignRole($role->name);
+
+            return response()->json([
+                'message' => 'User Created ',
+            ]);
+
+        });
 }
 }
